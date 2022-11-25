@@ -50,9 +50,9 @@ void print_components(request_rec *r, prom_status_config *config)
 
 void print_traffic_metrics(request_rec *r, prom_status_httpd_metrics *metrics)
 {
-    ap_rputs("# HELP httpd_uptime_seconds_total Current uptime in seconds\n", r);
-    ap_rputs("# TYPE httpd_uptime_seconds_total gauge\n", r);
-    ap_rprintf(r, "httpd_uptime_seconds_total %d\n", metrics->uptime);
+    ap_rputs("# HELP httpd_uptime_seconds Current uptime in seconds\n", r);
+    ap_rputs("# TYPE httpd_uptime_seconds gauge\n", r);
+    ap_rprintf(r, "httpd_uptime_seconds %d\n", metrics->uptime);
 
     ap_rputs("# HELP httpd_accesses_total Current total apache accesses\n", r);
     ap_rputs("# TYPE httpd_accesses_total counter\n", r);
