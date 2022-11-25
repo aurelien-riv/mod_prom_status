@@ -73,7 +73,7 @@ static int prom_status_init(apr_pool_t *p, apr_pool_t *plog, apr_pool_t *ptemp, 
 
 static int prom_status_pre_config(apr_pool_t *p, apr_pool_t *plog, apr_pool_t *ptemp)
 {
-    /* When mod_status is loaded, default our ExtendedStatus to 'on'
+    /* When mod_prom_status is loaded, default our ExtendedStatus to 'on'
      * other modules which prefer verbose scoreboards may play a similar game.
      * If left to their own requirements, mpm modules can make do with simple
      * scoreboard entries.
@@ -129,12 +129,12 @@ static void print_scoreboard_data(request_rec *r)
     int *worker_status_count = apr_pcalloc(r->pool, (SERVER_NUM_STATUS+1) * sizeof(int));
 
     for (int i = 0; i < server_limit; ++i) {
-        for (int j = 0; j < thread_limit; ++j) {
+        for (int k = 0; k < thread_limit; ++k) {
             worker_score *ws_record = apr_palloc(r->pool, sizeof *ws_record);
-            ap_copy_scoreboard_worker(ws_record, i, j);
+            ap_copy_scoreboard_worker(ws_record, i, k);
             int res = ws_record->status;
 
-            if ((i >= max_servers || j >= threads_per_child) && (res == SERVER_DEAD))
+            if ((i >= max_servers || k >= threads_per_child) && (res == SERVER_DEAD))
                 ++worker_status_count[SERVER_DISABLED];
             else
                 ++worker_status_count[res];
