@@ -31,14 +31,8 @@
 #include "http_core.h"
 #include "http_protocol.h"
 #include "http_request.h"
-#include "http_log.h"
-#include "scoreboard.h"
 #include "ap_mpm.h"
-
-#define MOD_STATUS_NUM_STATUS (SERVER_NUM_STATUS+1)
-#define SERVER_DISABLED SERVER_NUM_STATUS
-
-static int server_limit, thread_limit, threads_per_child, max_servers;
+#include "prom_status_collector.h"
 
 static void register_hooks(apr_pool_t *pool);
 
@@ -54,19 +48,22 @@ module AP_MODULE_DECLARE_DATA prom_status_module =
     0                // flags
 };
 
-typedef struct {
-    int show_modules;
-} prom_status_config;
+static prom_status_http_mpm_config mpm_config = {
+    .server_limit = 0,
+    .thread_limit = 0,
+    .threads_per_child = 0,
+    .max_servers = 0
+};
 
 static int prom_status_init(apr_pool_t *p, apr_pool_t *plog, apr_pool_t *ptemp, server_rec *s)
 {
-    ap_mpm_query(AP_MPMQ_HARD_LIMIT_THREADS, &thread_limit);
-    ap_mpm_query(AP_MPMQ_HARD_LIMIT_DAEMONS, &server_limit);
-    ap_mpm_query(AP_MPMQ_MAX_THREADS, &threads_per_child);
+    ap_mpm_query(AP_MPMQ_HARD_LIMIT_THREADS, &mpm_config.thread_limit);
+    ap_mpm_query(AP_MPMQ_HARD_LIMIT_DAEMONS, &mpm_config.server_limit);
+    ap_mpm_query(AP_MPMQ_MAX_THREADS, &mpm_config.threads_per_child);
     /* work around buggy MPMs */
-    if (threads_per_child == 0)
-        threads_per_child = 1;
-    ap_mpm_query(AP_MPMQ_MAX_DAEMONS, &max_servers);
+    if (mpm_config.threads_per_child == 0)
+        mpm_config.threads_per_child = 1;
+    ap_mpm_query(AP_MPMQ_MAX_DAEMONS, &mpm_config.max_servers);
 
     return OK;
 }
@@ -96,67 +93,6 @@ static prom_status_config *parse_arguments(request_rec *r)
     return config;
 }
 
-static void print_components(request_rec *r, prom_status_config *config)
-{
-    ap_rputs("# HELP httpd_server Basic information on the HTTPd instance\n", r);
-    ap_rputs("# TYPE httpd_server gauge\n", r);
-    ap_rprintf(r,
-        "httpd_server{version=\"%s\", name=\"%s\", mpm=\"%s\"} 1\n",
-        ap_get_server_description(),
-        ap_get_server_name(r),
-        ap_show_mpm()
-    );
-
-    if (config->show_modules) {
-        ap_rputs("# HELP httpd_module List of loaded modules\n", r);
-        ap_rputs("# TYPE httpd_module gauge\n", r);
-        for (int i = 0; ap_loaded_modules[i] != NULL; ++i) {
-            ap_rprintf(r, "httpd_module{name=\"%s\"} 1\n", ap_find_module_short_name(i));
-        }
-    }
-}
-
-static void print_scoreboard_data(request_rec *r)
-{
-    if (!ap_exists_scoreboard_image()) {
-        ap_log_rerror(APLOG_MARK, APLOG_ERR, 0, r, APLOGNO(01237) "Server status unavailable in inetd mode");
-        ap_rputs("# HELP httpd_scoreboard_unavailable Scoreboard is unavailable\n", r);
-        ap_rputs("# TYPE httpd_scoreboard_unavailable gauge\n", r);
-        ap_rputs("httpd_scoreboard_unavailable 1\n", r);
-        return;
-    }
-
-    int *worker_status_count = apr_pcalloc(r->pool, (SERVER_NUM_STATUS+1) * sizeof(int));
-
-    for (int i = 0; i < server_limit; ++i) {
-        for (int k = 0; k < thread_limit; ++k) {
-            worker_score *ws_record = apr_palloc(r->pool, sizeof *ws_record);
-            ap_copy_scoreboard_worker(ws_record, i, k);
-            int res = ws_record->status;
-
-            if ((i >= max_servers || k >= threads_per_child) && (res == SERVER_DEAD))
-                ++worker_status_count[SERVER_DISABLED];
-            else
-                ++worker_status_count[res];
-        }
-    }
-
-    ap_rputs("# HELP httpd_scoreboard HTTPd scoreboard statuses\n", r);
-    ap_rputs("# TYPE httpd_scoreboard gauge\n", r);
-    ap_rprintf(r, "httpd_scoreboard{state=\"open_slot\"} %d\n", worker_status_count[SERVER_DEAD]);
-    ap_rprintf(r, "httpd_scoreboard{state=\"idle\"} %d\n", worker_status_count[SERVER_READY]);
-    ap_rprintf(r, "httpd_scoreboard{state=\"startup\"} %d\n", worker_status_count[SERVER_STARTING]);
-    ap_rprintf(r, "httpd_scoreboard{state=\"read\"} %d\n", worker_status_count[SERVER_BUSY_READ]);
-    ap_rprintf(r, "httpd_scoreboard{state=\"reply\"} %d\n", worker_status_count[SERVER_BUSY_WRITE]);
-    ap_rprintf(r, "httpd_scoreboard{state=\"keepalive\"} %d\n", worker_status_count[SERVER_BUSY_KEEPALIVE]);
-    ap_rprintf(r, "httpd_scoreboard{state=\"dns\"} %d\n", worker_status_count[SERVER_BUSY_DNS]);
-    ap_rprintf(r, "httpd_scoreboard{state=\"closing\"} %d\n", worker_status_count[SERVER_CLOSING]);
-    ap_rprintf(r, "httpd_scoreboard{state=\"logging\"} %d\n", worker_status_count[SERVER_BUSY_LOG]);
-    ap_rprintf(r, "httpd_scoreboard{state=\"graceful_stop\"} %d\n", worker_status_count[SERVER_GRACEFUL]);
-    ap_rprintf(r, "httpd_scoreboard{state=\"idle_cleanup\"} %d\n", worker_status_count[SERVER_IDLE_KILL]);
-    //ap_rprintf(r, "httpd_scoreboard{state=\"disabled\"} %d\n", worker_status_count[SERVER_DISABLED]);
-}
-
 static int prom_status_handler(request_rec *r)
 {
     if (!r->handler || strcmp(r->handler, "prom-status"))
@@ -166,7 +102,7 @@ static int prom_status_handler(request_rec *r)
 
     prom_status_config *config = parse_arguments(r);
     print_components(r, config);
-    print_scoreboard_data(r);
+    print_scoreboard_data(r, &mpm_config);
 
     return OK;
 }
