@@ -32,7 +32,9 @@
 #include "http_protocol.h"
 #include "http_request.h"
 #include "ap_mpm.h"
+#include "mod_prom_status.h"
 #include "prom_status_collector.h"
+#include "prom_status_renderer.h"
 
 static void register_hooks(apr_pool_t *pool);
 
@@ -101,8 +103,18 @@ static int prom_status_handler(request_rec *r)
     }
 
     prom_status_config *config = parse_arguments(r);
+
+    prom_status_httpd_metrics *metrics = load_http_metrics(r, &mpm_config);
+    if (metrics == NULL) {
+        ap_rputs("# HELP httpd_metrics_unavailable Scoreboard is unavailable\n", r);
+        ap_rputs("# TYPE httpd_metrics_unavailable gauge\n", r);
+        ap_rputs("httpd_metrics_unavailable 1\n", r);
+        return DECLINED;
+    }
+
     print_components(r, config);
-    print_scoreboard_data(r, &mpm_config);
+    print_traffic_metrics(r, metrics);
+    print_scoreboard_data(r, metrics);
 
     return OK;
 }

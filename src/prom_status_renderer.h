@@ -27,4 +27,6 @@
 #include "http_core.h"
 #include "mod_prom_status.h"
 
-prom_status_httpd_metrics *load_http_metrics(request_rec *r, prom_status_http_mpm_config *mpm_config);
+void print_components(request_rec *r, prom_status_config *config);
+void print_traffic_metrics(request_rec *r, prom_status_httpd_metrics *metrics);
+void print_scoreboard_data(request_rec *r, prom_status_httpd_metrics *metrics);
