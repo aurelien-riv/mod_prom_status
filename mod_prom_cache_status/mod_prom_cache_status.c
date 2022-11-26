@@ -25,12 +25,11 @@
 #include "http_core.h"
 #include "http_protocol.h"
 #include "http_request.h"
+#include "http_log.h"
 #include "ap_mpm.h"
 #include "mod_cache.h"
 
-// FIXME the module is instantiated in multiple threads, we need to make this memory area unique
-// for instance using slotmem (see mod_proxy_balancer and mod_heartmonitor)
-static int metrics[AP_CACHE_INVALIDATE+1] = {0};
+static volatile int metrics[AP_CACHE_INVALIDATE+1] = {0};
 
 static void register_hooks(apr_pool_t *pool);
 
@@ -66,10 +65,13 @@ static int prom_cache_status_handler(request_rec *r)
 static int prom_cache_status_listener(cache_handle_t *h, request_rec *r,
         apr_table_t *headers, ap_cache_status_e status, const char *reason)
 {
+    // if metrics wasn't volatile, each thread would have the same pointer but a different value on the pointer data.
+    // However, it doesn't mean this code is thread safe. It isn't, if two increments on the same status are done
+    // simultaneously, one increment is lost. I don't  the shape of the graphs and the percentage will be impacted by
+    // these data race, so for now I won't put a mutex that would slow down HTTPd.
     ++metrics[status];
     return OK;
 }
-
 
 static void register_hooks(apr_pool_t *pool)
 {

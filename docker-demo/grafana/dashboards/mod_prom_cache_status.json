@@ -91,7 +91,6 @@
         "y": 0
       },
       "id": 2,
-      "interval": "30s",
       "options": {
         "legend": {
           "calcs": [],
@@ -116,24 +115,13 @@
           "legendFormat": "{{status}}",
           "range": true,
           "refId": "A"
-        },
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "prometheus"
-          },
-          "editorMode": "code",
-          "expr": "httpd_cache_statistics",
-          "hide": true,
-          "legendFormat": "{{status}}",
-          "range": true,
-          "refId": "B"
         }
       ],
       "title": "Cache statistics",
       "type": "timeseries"
     }
   ],
+  "refresh": "5s",
   "schemaVersion": 37,
   "style": "dark",
   "tags": [],
