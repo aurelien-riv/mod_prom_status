@@ -11,7 +11,7 @@ This module reports some Apache HTTPd metrics, like mod_status, formatted like a
 
 This module listens on the cache_status hook of mod_cache in order to monitor the cache efficiency. 
 
-**Not ready yet.**
+**Not ready yet.** (the stats are stored per thread, not globally)
 
 ## Demonstration
 

@@ -5,6 +5,8 @@ services:
     build:
       context: ./../
       dockerfile: ./docker-demo/httpd/Dockerfile
+    cap_add:
+      - SYS_PTRACE
 
   prometheus:
     image: prom/prometheus:latest

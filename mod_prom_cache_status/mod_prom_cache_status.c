@@ -28,9 +28,9 @@
 #include "ap_mpm.h"
 #include "mod_cache.h"
 
-typedef int prom_cache_status_metrics[AP_CACHE_INVALIDATE+1];
-
-static prom_cache_status_metrics metrics = {0};
+// FIXME the module is instantiated in multiple threads, we need to make this memory area unique
+// for instance using slotmem (see mod_proxy_balancer and mod_heartmonitor)
+static int metrics[AP_CACHE_INVALIDATE+1] = {0};
 
 static void register_hooks(apr_pool_t *pool);
 
