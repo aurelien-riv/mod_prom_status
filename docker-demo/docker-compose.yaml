@@ -5,14 +5,11 @@ services:
     build:
       context: ./../
       dockerfile: ./docker-demo/httpd/Dockerfile
-    restart: on-failure
 
   prometheus:
     image: prom/prometheus:latest
     volumes:
       - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
-    ports:
-      - "9090:9090"
     depends_on:
       - httpd
     command:

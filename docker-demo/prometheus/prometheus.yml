@@ -8,3 +8,8 @@ scrape_configs:
       - targets: [ 'httpd:80' ]
     params:
       modules: [""]  # adds ?modules in the requested URL
+
+  - job_name: 'httpd-cache'
+    static_configs:
+      - targets: [ 'httpd:80' ]
+    metrics_path: /cache-metrics

@@ -60,3 +60,4 @@ prom_status_httpd_metrics *load_http_metrics(request_rec *r, prom_status_http_mp
 
     return metrics;
 }
+
