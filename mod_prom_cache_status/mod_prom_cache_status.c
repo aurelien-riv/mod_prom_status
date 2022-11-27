@@ -53,8 +53,6 @@ module AP_MODULE_DECLARE_DATA prom_cache_status_module =
 
 static void prom_cache_status_handler(request_rec *r)
 {
-    ap_log_rerror(APLOG_MARK, APLOG_ERR, 0, r, "miss: %d", metrics[AP_CACHE_MISS]);
-
     ap_rputs("# HELP httpd_cache_statistics mod_cache statistics\n", r);
     ap_rputs("# TYPE httpd_cache_statistics counter\n", r);
     ap_rprintf(r, "httpd_cache_statistics{status=\"%s\"} %d\n", AP_CACHE_HIT_ENV,        metrics[AP_CACHE_HIT]);
@@ -74,8 +72,7 @@ static int prom_cache_status_listener(cache_handle_t *h, request_rec *r,
 
 static void prom_cache_status_child_init(apr_pool_t *p, server_rec *s)
 {
-    storage->dptr(slotmem, 1, (void *)&metrics);
-    ap_log_error(APLOG_MARK, APLOG_EMERG, 0, s, APLOGNO(01205) "prom_cache_status init: %d", metrics[AP_CACHE_HIT]);
+    storage->dptr(slotmem, 0, (void *)&metrics);
 }
 
 static int prom_cache_status_post_config(apr_pool_t *p, apr_pool_t *plog, apr_pool_t *ptemp, server_rec *s)
@@ -94,12 +91,6 @@ static int prom_cache_status_post_config(apr_pool_t *p, apr_pool_t *plog, apr_po
         if (!slotmem) {
             ap_log_error(APLOG_MARK, APLOG_EMERG, 0, s, APLOGNO(02285) "slotmem_create for status failed");
             return !OK;
-        }
-
-        if (storage->num_slots(slotmem) == 0) {
-            // FIXME memory leak
-            metrics = (volatile int *) calloc(sizeof(int), AP_CACHE_INVALIDATE+1);
-            storage->put(slotmem, 0, (unsigned char *)metrics, (AP_CACHE_INVALIDATE+1) * sizeof(int));
         }
     }
 

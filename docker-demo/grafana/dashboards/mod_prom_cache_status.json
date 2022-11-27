@@ -91,6 +91,7 @@
         "y": 0
       },
       "id": 2,
+      "interval": "10s",
       "options": {
         "legend": {
           "calcs": [],
