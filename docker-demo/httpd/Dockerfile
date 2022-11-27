@@ -3,10 +3,11 @@ RUN apt update && apt -y install apache2-dev
 COPY ./mod_prom_status/ /root/mod_prom_status/
 COPY ./mod_prom_cache_status/ /root/mod_prom_cache_status/
 RUN cd /root/mod_prom_status/ && apxs -i -a -c *.c
-RUN cd /root/mod_prom_cache_status/ && apxs -i -a -c *.c
+RUN cd /root/mod_prom_cache_status/ && apxs -i -I /root/mod_prom_status/ -a -c *.c
 
 
 FROM httpd:2.4
+RUN apt update && apt install curl
 COPY --from=builder /usr/local/apache2/modules/mod_prom_status.so /usr/local/apache2/modules/mod_prom_status.so
 COPY --from=builder /usr/local/apache2/modules/mod_prom_cache_status.so /usr/local/apache2/modules/mod_prom_cache_status.so
 COPY ./docker-demo/httpd/prom-status.conf /usr/local/apache2/conf/extra/prom-status.conf

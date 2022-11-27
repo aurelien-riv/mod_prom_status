@@ -33,6 +33,7 @@
 #include "http_request.h"
 #include "ap_mpm.h"
 #include "mod_prom_status.h"
+#include "mod_prom_status_internal.h"
 #include "prom_status_collector.h"
 #include "prom_status_renderer.h"
 
@@ -49,6 +50,11 @@ module AP_MODULE_DECLARE_DATA prom_status_module =
     register_hooks,  // Our hook registering function
     0                // flags
 };
+
+APR_HOOK_STRUCT(
+  APR_HOOK_LINK(prom_status_hook)
+)
+AP_IMPLEMENT_HOOK_VOID(prom_status_hook, (request_rec *r), (r))
 
 static prom_status_http_mpm_config mpm_config = {
     .server_limit = 0,
@@ -115,6 +121,10 @@ static int prom_status_handler(request_rec *r)
     print_components(r, config);
     print_traffic_metrics(r, metrics);
     print_scoreboard_data(r, metrics);
+
+    ap_rputs("Hooks\n", r);
+
+    ap_run_prom_status_hook(r);
 
     return OK;
 }

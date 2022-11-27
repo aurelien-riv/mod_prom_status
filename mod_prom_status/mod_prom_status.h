@@ -19,31 +19,12 @@
 
 /**
  * Aurélien Rivière <aurelien.riv@gmail.com> 2022
- * Most of this code comes from https://github.com/apache/httpd/blob/ccf9197926e25d11d8786df3dd39cb1b931f11b5/modules/generators/mod_status.c
  */
 
 #pragma once
 
 #include "httpd.h"
 #include "http_core.h"
+#include "ap_config.h"
 
-#define SERVER_DISABLED SERVER_NUM_STATUS
-#define MOD_STATUS_NUM_STATUS (SERVER_NUM_STATUS+1)
-
-typedef struct {
-    int show_modules;
-} prom_status_config;
-
-typedef struct {
-    int server_limit;
-    int thread_limit;
-    int threads_per_child;
-    int max_servers;
-} prom_status_http_mpm_config;
-
-typedef struct {
-    apr_uint32_t uptime;
-    int worker_status_count[SERVER_NUM_STATUS+1];
-    int req_count;
-    int byte_count;
-} prom_status_httpd_metrics;
+AP_DECLARE_HOOK(void, prom_status_hook, (request_rec *r))

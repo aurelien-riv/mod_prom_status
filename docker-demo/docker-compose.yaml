@@ -1,5 +1,8 @@
 version: '3'
 
+volumes:
+  prometheus-data:
+
 services:
   httpd:
     build:
@@ -11,6 +14,7 @@ services:
   prometheus:
     image: prom/prometheus:latest
     volumes:
+      - prometheus-data:/prometheus
       - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
     depends_on:
       - httpd

@@ -7,9 +7,13 @@ add a component per server in the monitoring stack. Also, it is limited by what 
 
 This module reports some Apache HTTPd metrics, like mod_status, formatted like any Prometheus exporter.
 
+It must be loaded before any mod_prom_*_status.
+
 ## mod_prom_cache_status
 
 This module listens on the cache_status hook of mod_cache in order to monitor the cache efficiency. 
+
+You must load mod_cache and mod_prom_status **before** mod_prom_cache_status.
 
 **Not ready yet.** (the stats are stored per thread, not globally)
 

@@ -19,7 +19,6 @@
 
 /**
  * Aurélien Rivière <aurelien.riv@gmail.com> 2022
- * Most of this code comes from https://github.com/apache/httpd/blob/ccf9197926e25d11d8786df3dd39cb1b931f11b5/modules/generators/mod_status.c
  */
 
 #include "httpd.h"

@@ -21,13 +21,14 @@
  * Aurélien Rivière <aurelien.riv@gmail.com> 2022
  */
 
+#include "ap_config.h"
 #include "httpd.h"
 #include "http_core.h"
 #include "http_protocol.h"
 #include "http_request.h"
 #include "http_log.h"
-#include "ap_mpm.h"
 #include "mod_cache.h"
+#include "mod_prom_status.h"
 
 static volatile int metrics[AP_CACHE_INVALIDATE+1] = {0};
 
@@ -45,12 +46,16 @@ module AP_MODULE_DECLARE_DATA prom_cache_status_module =
     0                // flags
 };
 
-static int prom_cache_status_handler(request_rec *r)
+static void prom_cache_status_handler(request_rec *r)
 {
-    if (!r->handler || strcmp(r->handler, "prom-cache-status"))
-    {
-      return (DECLINED);
-    }
+    // FIXME when httpd spawns a new process the counter is partially reset:
+    /*
+    192.168.240.3 - - [26/Nov/2022:20:23:55 +0000] "GET /cache-metrics HTTP/1.1" 200 286
+    [Sat Nov 26 20:24:00.246652 2022] [:error] [pid 9:tid 140362744030976] [client 192.168.240.3:36116] AH01237: miss: 523
+    192.168.240.3 - - [26/Nov/2022:20:24:00 +0000] "GET /cache-metrics HTTP/1.1" 200 286
+    [Sat Nov 26 20:24:05.253403 2022] [:error] [pid 10:tid 140363037644544] [client 192.168.240.3:33660] AH01237: miss: 256
+    */
+    ap_log_rerror(APLOG_MARK, APLOG_ERR, 0, r, APLOGNO(01237) "miss: %d", metrics[AP_CACHE_MISS]);
 
     ap_rputs("# HELP httpd_cache_statistics mod_cache statistics\n", r);
     ap_rputs("# TYPE httpd_cache_statistics counter\n", r);
@@ -58,8 +63,6 @@ static int prom_cache_status_handler(request_rec *r)
     ap_rprintf(r, "httpd_cache_statistics{status=\"%s\"} %d\n", AP_CACHE_REVALIDATE_ENV, metrics[AP_CACHE_REVALIDATE]);
     ap_rprintf(r, "httpd_cache_statistics{status=\"%s\"} %d\n", AP_CACHE_MISS_ENV,       metrics[AP_CACHE_MISS]);
     ap_rprintf(r, "httpd_cache_statistics{status=\"%s\"} %d\n", AP_CACHE_INVALIDATE_ENV, metrics[AP_CACHE_INVALIDATE]);
-
-    return OK;
 }
 
 static int prom_cache_status_listener(cache_handle_t *h, request_rec *r,
@@ -69,12 +72,14 @@ static int prom_cache_status_listener(cache_handle_t *h, request_rec *r,
     // However, it doesn't mean this code is thread safe. It isn't, if two increments on the same status are done
     // simultaneously, one increment is lost. I don't  the shape of the graphs and the percentage will be impacted by
     // these data race, so for now I won't put a mutex that would slow down HTTPd.
+    ap_log_rerror(APLOG_MARK, APLOG_ERR, 0, r, APLOGNO(01237) "inc: %d", metrics[AP_CACHE_MISS]);
+
     ++metrics[status];
     return OK;
 }
 
 static void register_hooks(apr_pool_t *pool)
 {
-    ap_hook_handler(prom_cache_status_handler, NULL, NULL, APR_HOOK_MIDDLE);
     cache_hook_cache_status(prom_cache_status_listener, NULL, NULL, APR_HOOK_MIDDLE);
+    ap_hook_prom_status_hook(prom_cache_status_handler, NULL, NULL, APR_HOOK_MIDDLE);
 }
