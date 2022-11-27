@@ -67,11 +67,11 @@ static int prom_status_init(apr_pool_t *p, apr_pool_t *plog, apr_pool_t *ptemp, 
 {
     ap_mpm_query(AP_MPMQ_HARD_LIMIT_THREADS, &mpm_config.thread_limit);
     ap_mpm_query(AP_MPMQ_HARD_LIMIT_DAEMONS, &mpm_config.server_limit);
+    ap_mpm_query(AP_MPMQ_MAX_DAEMONS, &mpm_config.max_servers);
     ap_mpm_query(AP_MPMQ_MAX_THREADS, &mpm_config.threads_per_child);
     /* work around buggy MPMs */
     if (mpm_config.threads_per_child == 0)
         mpm_config.threads_per_child = 1;
-    ap_mpm_query(AP_MPMQ_MAX_DAEMONS, &mpm_config.max_servers);
 
     return OK;
 }
@@ -118,7 +118,7 @@ static int prom_status_handler(request_rec *r)
         return DECLINED;
     }
 
-    print_components(r, config);
+    print_components(r, config, &mpm_config);
     print_traffic_metrics(r, metrics);
     print_scoreboard_data(r, metrics);
 

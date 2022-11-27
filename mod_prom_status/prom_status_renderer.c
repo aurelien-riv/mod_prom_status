@@ -27,15 +27,17 @@
 #include "scoreboard.h"
 #include "prom_status_renderer.h"
 
-void print_components(request_rec *r, prom_status_config *config)
+void print_components(request_rec *r, prom_status_config *config, prom_status_http_mpm_config *mpm_config)
 {
     ap_rputs("# HELP httpd_info Basic information on the HTTPd instance\n", r);
     ap_rputs("# TYPE httpd_info gauge\n", r);
     ap_rprintf(r,
-        "httpd_info{version=\"%s\", name=\"%s\", mpm=\"%s\"} 1\n",
+        "httpd_info{version=\"%s\", name=\"%s\", mpm=\"%s\", maxservers=\"%d\", threads_per_child=\"%d\"} 1\n",
         ap_get_server_description(),
         ap_get_server_name(r),
-        ap_show_mpm()
+        ap_show_mpm(),
+        mpm_config->max_servers,
+        mpm_config->threads_per_child
     );
 
     if (config->show_modules) {
