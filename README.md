@@ -13,9 +13,8 @@ It must be loaded before any mod_prom_*_status.
 
 This module listens on the cache_status hook of mod_cache in order to monitor the cache efficiency. 
 
-You must load mod_cache and mod_prom_status **before** mod_prom_cache_status.
+You must load mod_cache, mod_slotmem_shm and mod_prom_status **before** mod_prom_cache_status.
 
-**Not ready yet.** (the stats are stored per thread, not globally)
 
 ## Demonstration
 
