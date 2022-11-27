@@ -740,7 +740,7 @@
           "refId": "A"
         }
       ],
-      "title": "Send bytes",
+      "title": "Bytes sent",
       "type": "timeseries"
     }
   ],
