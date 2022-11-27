@@ -27,7 +27,7 @@
 #include "http_core.h"
 
 #define SERVER_DISABLED SERVER_NUM_STATUS
-#define MOD_STATUS_NUM_STATUS (SERVER_NUM_STATUS+1)
+#define MOD_STATUS_STATUS_COUNT (SERVER_NUM_STATUS+1)
 
 typedef struct {
     int show_modules;
@@ -42,7 +42,7 @@ typedef struct {
 
 typedef struct {
     apr_uint32_t uptime;
-    int worker_status_count[SERVER_NUM_STATUS+1];
+    int *worker_status_count;
     int req_count;
     int byte_count;
 } prom_status_httpd_metrics;

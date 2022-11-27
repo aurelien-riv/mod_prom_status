@@ -35,6 +35,7 @@ prom_status_httpd_metrics *load_http_metrics(request_rec *r, prom_status_http_mp
     }
 
     prom_status_httpd_metrics *metrics = (prom_status_httpd_metrics *)apr_pcalloc(r->pool, sizeof(prom_status_httpd_metrics));
+    metrics->worker_status_count = (int *) apr_pcalloc(r->pool, sizeof(int) * mpm_config->server_limit * MOD_STATUS_STATUS_COUNT);
 
     metrics->uptime = (apr_uint32_t) apr_time_sec(apr_time_now() - ap_scoreboard_image->global->restart_time);
 
@@ -46,9 +47,9 @@ prom_status_httpd_metrics *load_http_metrics(request_rec *r, prom_status_http_mp
             int res = ws_record->status;
 
             if ((i >= mpm_config->max_servers || k >= mpm_config->threads_per_child) && (res == SERVER_DEAD)) {
-                ++metrics->worker_status_count[SERVER_DISABLED];
+                ++metrics->worker_status_count[i * MOD_STATUS_STATUS_COUNT + SERVER_DISABLED];
             } else {
-                ++metrics->worker_status_count[res];
+                ++metrics->worker_status_count[i * MOD_STATUS_STATUS_COUNT + res];
             }
 
             if (ws_record->access_count != 0 || (res != SERVER_READY && res != SERVER_DEAD)) {

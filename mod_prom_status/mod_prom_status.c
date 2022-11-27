@@ -120,7 +120,7 @@ static int prom_status_handler(request_rec *r)
 
     print_components(r, config, &mpm_config);
     print_traffic_metrics(r, metrics);
-    print_scoreboard_data(r, metrics);
+    print_scoreboard_data(r, metrics, &mpm_config);
 
     ap_run_prom_status_hook(r);
 

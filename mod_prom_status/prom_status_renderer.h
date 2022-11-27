@@ -29,4 +29,4 @@
 
 void print_components(request_rec *r, prom_status_config *config, prom_status_http_mpm_config *mpm_config);
 void print_traffic_metrics(request_rec *r, prom_status_httpd_metrics *metrics);
-void print_scoreboard_data(request_rec *r, prom_status_httpd_metrics *metrics);
+void print_scoreboard_data(request_rec *r, prom_status_httpd_metrics *metrics, prom_status_http_mpm_config *mpm_config);
