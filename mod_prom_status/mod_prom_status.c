@@ -122,8 +122,6 @@ static int prom_status_handler(request_rec *r)
     print_traffic_metrics(r, metrics);
     print_scoreboard_data(r, metrics);
 
-    ap_rputs("Hooks\n", r);
-
     ap_run_prom_status_hook(r);
 
     return OK;

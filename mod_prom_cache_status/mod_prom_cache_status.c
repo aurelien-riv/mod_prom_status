@@ -22,15 +22,20 @@
  */
 
 #include "ap_config.h"
+#include "ap_slotmem.h"
 #include "httpd.h"
 #include "http_core.h"
 #include "http_protocol.h"
 #include "http_request.h"
+#include "http_main.h"
 #include "http_log.h"
 #include "mod_cache.h"
 #include "mod_prom_status.h"
 
-static volatile int metrics[AP_CACHE_INVALIDATE+1] = {0};
+static const ap_slotmem_provider_t *storage = NULL;
+static ap_slotmem_instance_t *slotmem = NULL;
+
+static volatile int *metrics;
 
 static void register_hooks(apr_pool_t *pool);
 
@@ -48,14 +53,7 @@ module AP_MODULE_DECLARE_DATA prom_cache_status_module =
 
 static void prom_cache_status_handler(request_rec *r)
 {
-    // FIXME when httpd spawns a new process the counter is partially reset:
-    /*
-    192.168.240.3 - - [26/Nov/2022:20:23:55 +0000] "GET /cache-metrics HTTP/1.1" 200 286
-    [Sat Nov 26 20:24:00.246652 2022] [:error] [pid 9:tid 140362744030976] [client 192.168.240.3:36116] AH01237: miss: 523
-    192.168.240.3 - - [26/Nov/2022:20:24:00 +0000] "GET /cache-metrics HTTP/1.1" 200 286
-    [Sat Nov 26 20:24:05.253403 2022] [:error] [pid 10:tid 140363037644544] [client 192.168.240.3:33660] AH01237: miss: 256
-    */
-    ap_log_rerror(APLOG_MARK, APLOG_ERR, 0, r, APLOGNO(01237) "miss: %d", metrics[AP_CACHE_MISS]);
+    ap_log_rerror(APLOG_MARK, APLOG_ERR, 0, r, "miss: %d", metrics[AP_CACHE_MISS]);
 
     ap_rputs("# HELP httpd_cache_statistics mod_cache statistics\n", r);
     ap_rputs("# TYPE httpd_cache_statistics counter\n", r);
@@ -68,18 +66,50 @@ static void prom_cache_status_handler(request_rec *r)
 static int prom_cache_status_listener(cache_handle_t *h, request_rec *r,
         apr_table_t *headers, ap_cache_status_e status, const char *reason)
 {
-    // if metrics wasn't volatile, each thread would have the same pointer but a different value on the pointer data.
-    // However, it doesn't mean this code is thread safe. It isn't, if two increments on the same status are done
-    // simultaneously, one increment is lost. I don't  the shape of the graphs and the percentage will be impacted by
-    // these data race, so for now I won't put a mutex that would slow down HTTPd.
-    ap_log_rerror(APLOG_MARK, APLOG_ERR, 0, r, APLOGNO(01237) "inc: %d", metrics[AP_CACHE_MISS]);
-
+    // This isn't thread safe, if two increments on the same status are done simultaneously, one increment is lost.
+    // It shouldn't change the shape of the graphs, and a mutex would slow HTTPd down so I think it's OK.
     ++metrics[status];
+    return OK;
+}
+
+static void prom_cache_status_child_init(apr_pool_t *p, server_rec *s)
+{
+    storage->dptr(slotmem, 1, (void *)&metrics);
+    ap_log_error(APLOG_MARK, APLOG_EMERG, 0, s, APLOGNO(01205) "prom_cache_status init: %d", metrics[AP_CACHE_HIT]);
+}
+
+static int prom_cache_status_post_config(apr_pool_t *p, apr_pool_t *plog, apr_pool_t *ptemp, server_rec *s)
+{
+    if (ap_state_query(AP_SQ_MAIN_STATE) == AP_SQ_MS_CREATE_CONFIG) {
+        storage = ap_lookup_provider(AP_SLOTMEM_PROVIDER_GROUP, "shm", AP_SLOTMEM_PROVIDER_VERSION);
+        if (!storage) {
+            ap_log_error(
+                APLOG_MARK, APLOG_EMERG, 0, s, APLOGNO(02284)
+                "failed to lookup provider 'shm' for '%s', maybe you need to load mod_slotmem_shm?",
+                AP_SLOTMEM_PROVIDER_GROUP
+            );
+            return !OK;
+        }
+        storage->create(&slotmem, "mod_prom_cache_status", sizeof(int), AP_CACHE_INVALIDATE+1, AP_SLOTMEM_TYPE_PREGRAB, p);
+        if (!slotmem) {
+            ap_log_error(APLOG_MARK, APLOG_EMERG, 0, s, APLOGNO(02285) "slotmem_create for status failed");
+            return !OK;
+        }
+
+        if (storage->num_slots(slotmem) == 0) {
+            // FIXME memory leak
+            metrics = (volatile int *) calloc(sizeof(int), AP_CACHE_INVALIDATE+1);
+            storage->put(slotmem, 0, (unsigned char *)metrics, (AP_CACHE_INVALIDATE+1) * sizeof(int));
+        }
+    }
+
     return OK;
 }
 
 static void register_hooks(apr_pool_t *pool)
 {
+    ap_hook_post_config(prom_cache_status_post_config, NULL, NULL, APR_HOOK_LAST);
+    ap_hook_child_init(prom_cache_status_child_init, NULL, NULL, APR_HOOK_MIDDLE);
     cache_hook_cache_status(prom_cache_status_listener, NULL, NULL, APR_HOOK_MIDDLE);
     ap_hook_prom_status_hook(prom_cache_status_handler, NULL, NULL, APR_HOOK_MIDDLE);
 }
