@@ -58,12 +58,6 @@ prom_status_httpd_metrics *load_http_metrics(request_rec *r, prom_status_http_mp
                 metrics->byte_count += ws_record->bytes_served;
             }
         }
-
-        // if all the server threads are dead, then there is no server process at all
-        if (metrics->worker_status_count[i * MOD_STATUS_STATUS_COUNT + SERVER_DEAD] == mpm_config->threads_per_child) {
-            metrics->worker_status_count[i * MOD_STATUS_STATUS_COUNT + SERVER_DEAD] = 0;
-            metrics->worker_status_count[i * MOD_STATUS_STATUS_COUNT + SERVER_DEAD_NO_SERVER] = mpm_config->threads_per_child;
-        }
     }
 
     return metrics;

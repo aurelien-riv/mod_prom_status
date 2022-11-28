@@ -796,7 +796,7 @@
             "uid": "prometheus"
           },
           "editorMode": "code",
-          "expr": "count(count by (server) (httpd_scoreboard{state=\"open_slot_no_srv\"} == 0))",
+          "expr": "count(count by (server) (httpd_scoreboard{state=\"open_slot\"} == 0))",
           "hide": false,
           "legendFormat": "__auto",
           "range": true,
@@ -871,7 +871,7 @@
           "calcs": [
             "lastNotNull"
           ],
-          "fields": "/^sum\\(httpd_scoreboard\\{state!~\"idle\\|open_slot\\|open_slot_no_srv\"\\}\\)$/",
+          "fields": "",
           "values": false
         },
         "showThresholdLabels": true,
@@ -885,7 +885,7 @@
             "uid": "prometheus"
           },
           "editorMode": "code",
-          "expr": "sum(httpd_scoreboard{state!~\"idle|open_slot|open_slot_no_srv\"})",
+          "expr": "sum(httpd_scoreboard{state!~\"idle|open_slot\"})",
           "hide": false,
           "legendFormat": "__auto",
           "range": true,
@@ -904,7 +904,7 @@
           "refId": "B"
         }
       ],
-      "title": "Busy worker threads",
+      "title": "Busy threads",
       "transformations": [
         {
           "id": "configFromData",

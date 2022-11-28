@@ -71,18 +71,17 @@ void print_scoreboard_data(request_rec *r, prom_status_httpd_metrics *metrics, p
 
     const char *tpl = "httpd_scoreboard{state=\"%s\", server=\"%d\"} %d\n";
     for (int i = 0; i < mpm_config->server_limit; ++i) {
-        ap_rprintf(r, tpl, "open_slot_no_srv", i, metrics->worker_status_count[i * MOD_STATUS_STATUS_COUNT + SERVER_DEAD_NO_SERVER]);
-        ap_rprintf(r, tpl, "open_slot",        i, metrics->worker_status_count[i * MOD_STATUS_STATUS_COUNT + SERVER_DEAD]);
-        ap_rprintf(r, tpl, "idle",             i, metrics->worker_status_count[i * MOD_STATUS_STATUS_COUNT + SERVER_READY]);
-        ap_rprintf(r, tpl, "startup",          i, metrics->worker_status_count[i * MOD_STATUS_STATUS_COUNT + SERVER_STARTING]);
-        ap_rprintf(r, tpl, "read",             i, metrics->worker_status_count[i * MOD_STATUS_STATUS_COUNT + SERVER_BUSY_READ]);
-        ap_rprintf(r, tpl, "reply",            i, metrics->worker_status_count[i * MOD_STATUS_STATUS_COUNT + SERVER_BUSY_WRITE]);
-        ap_rprintf(r, tpl, "keepalive",        i, metrics->worker_status_count[i * MOD_STATUS_STATUS_COUNT + SERVER_BUSY_KEEPALIVE]);
-        ap_rprintf(r, tpl, "dns",              i, metrics->worker_status_count[i * MOD_STATUS_STATUS_COUNT + SERVER_BUSY_DNS]);
-        ap_rprintf(r, tpl, "closing",          i, metrics->worker_status_count[i * MOD_STATUS_STATUS_COUNT + SERVER_CLOSING]);
-        ap_rprintf(r, tpl, "logging",          i, metrics->worker_status_count[i * MOD_STATUS_STATUS_COUNT + SERVER_BUSY_LOG]);
-        ap_rprintf(r, tpl, "graceful_stop",    i, metrics->worker_status_count[i * MOD_STATUS_STATUS_COUNT + SERVER_GRACEFUL]);
-        ap_rprintf(r, tpl, "idle_cleanup",     i, metrics->worker_status_count[i * MOD_STATUS_STATUS_COUNT + SERVER_IDLE_KILL]);
-//        ap_rprintf(r, tpl, "disabled",         i, metrics->worker_status_count[i * MOD_STATUS_STATUS_COUNT + SERVER_DISABLED]);
+        ap_rprintf(r, tpl, "open_slot",     i, metrics->worker_status_count[i * MOD_STATUS_STATUS_COUNT + SERVER_DEAD]);
+        ap_rprintf(r, tpl, "idle",          i, metrics->worker_status_count[i * MOD_STATUS_STATUS_COUNT + SERVER_READY]);
+        ap_rprintf(r, tpl, "startup",       i, metrics->worker_status_count[i * MOD_STATUS_STATUS_COUNT + SERVER_STARTING]);
+        ap_rprintf(r, tpl, "read",          i, metrics->worker_status_count[i * MOD_STATUS_STATUS_COUNT + SERVER_BUSY_READ]);
+        ap_rprintf(r, tpl, "reply",         i, metrics->worker_status_count[i * MOD_STATUS_STATUS_COUNT + SERVER_BUSY_WRITE]);
+        ap_rprintf(r, tpl, "keepalive",     i, metrics->worker_status_count[i * MOD_STATUS_STATUS_COUNT + SERVER_BUSY_KEEPALIVE]);
+        ap_rprintf(r, tpl, "dns",           i, metrics->worker_status_count[i * MOD_STATUS_STATUS_COUNT + SERVER_BUSY_DNS]);
+        ap_rprintf(r, tpl, "closing",       i, metrics->worker_status_count[i * MOD_STATUS_STATUS_COUNT + SERVER_CLOSING]);
+        ap_rprintf(r, tpl, "logging",       i, metrics->worker_status_count[i * MOD_STATUS_STATUS_COUNT + SERVER_BUSY_LOG]);
+        ap_rprintf(r, tpl, "graceful_stop", i, metrics->worker_status_count[i * MOD_STATUS_STATUS_COUNT + SERVER_GRACEFUL]);
+        ap_rprintf(r, tpl, "idle_cleanup",  i, metrics->worker_status_count[i * MOD_STATUS_STATUS_COUNT + SERVER_IDLE_KILL]);
+//        ap_rprintf(r, tpl, "disabled",      i, metrics->worker_status_count[i * MOD_STATUS_STATUS_COUNT + SERVER_DISABLED]);
     }
 }
