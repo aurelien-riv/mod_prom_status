@@ -44,6 +44,7 @@ prom_status_httpd_metrics *load_http_metrics(request_rec *r, prom_status_http_mp
             worker_score *ws_record = apr_palloc(r->pool, sizeof *ws_record);
 
             ap_copy_scoreboard_worker(ws_record, i, k);
+
             int res = ws_record->status;
 
             if ((i >= mpm_config->max_servers || k >= mpm_config->threads_per_child) && (res == SERVER_DEAD)) {
@@ -56,6 +57,12 @@ prom_status_httpd_metrics *load_http_metrics(request_rec *r, prom_status_http_mp
                 metrics->req_count += ws_record->access_count;
                 metrics->byte_count += ws_record->bytes_served;
             }
+        }
+
+        // if all the server threads are dead, then there is no server process at all
+        if (metrics->worker_status_count[i * MOD_STATUS_STATUS_COUNT + SERVER_DEAD] == mpm_config->threads_per_child) {
+            metrics->worker_status_count[i * MOD_STATUS_STATUS_COUNT + SERVER_DEAD] = 0;
+            metrics->worker_status_count[i * MOD_STATUS_STATUS_COUNT + SERVER_DEAD_NO_SERVER] = mpm_config->threads_per_child;
         }
     }
 

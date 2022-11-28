@@ -27,7 +27,8 @@
 #include "http_core.h"
 
 #define SERVER_DISABLED SERVER_NUM_STATUS
-#define MOD_STATUS_STATUS_COUNT (SERVER_NUM_STATUS+1)
+#define SERVER_DEAD_NO_SERVER SERVER_NUM_STATUS+1
+#define MOD_STATUS_STATUS_COUNT (SERVER_NUM_STATUS+2)
 
 typedef struct {
     int show_modules;
