@@ -277,7 +277,7 @@
           "fields": "",
           "values": false
         },
-        "textMode": "name"
+        "textMode": "value"
       },
       "pluginVersion": "9.2.6",
       "targets": [
@@ -288,9 +288,9 @@
           },
           "editorMode": "code",
           "exemplar": false,
-          "expr": "httpd_info",
+          "expr": "count(count by (server) (httpd_scoreboard))",
           "instant": true,
-          "legendFormat": "{{maxservers}}",
+          "legendFormat": "__auto",
           "range": false,
           "refId": "A"
         }
@@ -344,7 +344,7 @@
           "fields": "",
           "values": false
         },
-        "textMode": "name"
+        "textMode": "auto"
       },
       "pluginVersion": "9.2.6",
       "targets": [
@@ -355,9 +355,9 @@
           },
           "editorMode": "code",
           "exemplar": false,
-          "expr": "httpd_info",
+          "expr": "sum(httpd_scoreboard) / count(count by (server) (httpd_scoreboard))",
           "instant": true,
-          "legendFormat": "{{threads_per_child}}",
+          "legendFormat": "__auto",
           "range": false,
           "refId": "A"
         }
@@ -885,10 +885,12 @@
             "uid": "prometheus"
           },
           "editorMode": "code",
+          "exemplar": false,
           "expr": "sum(httpd_scoreboard{state!~\"idle|open_slot\"})",
           "hide": false,
+          "instant": true,
           "legendFormat": "__auto",
-          "range": true,
+          "range": false,
           "refId": "A"
         },
         {
@@ -897,10 +899,12 @@
             "uid": "prometheus"
           },
           "editorMode": "code",
+          "exemplar": false,
           "expr": "sum(httpd_scoreboard)",
           "hide": false,
+          "instant": true,
           "legendFormat": "__auto",
-          "range": true,
+          "range": false,
           "refId": "B"
         }
       ],

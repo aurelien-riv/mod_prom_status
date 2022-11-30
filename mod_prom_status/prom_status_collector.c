@@ -35,11 +35,11 @@ prom_status_httpd_metrics *load_http_metrics(request_rec *r, prom_status_http_mp
     }
 
     prom_status_httpd_metrics *metrics = (prom_status_httpd_metrics *)apr_pcalloc(r->pool, sizeof(prom_status_httpd_metrics));
-    metrics->worker_status_count = (int *) apr_pcalloc(r->pool, sizeof(int) * mpm_config->server_limit * MOD_STATUS_STATUS_COUNT);
+    metrics->worker_status_count = (int *) apr_pcalloc(r->pool, sizeof(int) * mpm_config->max_servers * SERVER_NUM_STATUS);
 
     metrics->uptime = (apr_uint32_t) apr_time_sec(apr_time_now() - ap_scoreboard_image->global->restart_time);
 
-    for (int i = 0; i < mpm_config->server_limit; ++i) {
+    for (int i = 0; i < mpm_config->max_servers; ++i) {
         for (int k = 0; k < mpm_config->thread_limit; ++k) {
             worker_score *ws_record = apr_palloc(r->pool, sizeof *ws_record);
 
@@ -47,11 +47,11 @@ prom_status_httpd_metrics *load_http_metrics(request_rec *r, prom_status_http_mp
 
             int res = ws_record->status;
 
-            if ((i >= mpm_config->max_servers || k >= mpm_config->threads_per_child) && (res == SERVER_DEAD)) {
-                ++metrics->worker_status_count[i * MOD_STATUS_STATUS_COUNT + SERVER_DISABLED];
-            } else {
-                ++metrics->worker_status_count[i * MOD_STATUS_STATUS_COUNT + res];
+            if (k >= mpm_config->threads_per_child && res == SERVER_DEAD) {
+                continue;
             }
+
+            ++metrics->worker_status_count[i * SERVER_NUM_STATUS + res];
 
             if (ws_record->access_count != 0 || (res != SERVER_READY && res != SERVER_DEAD)) {
                 metrics->req_count += ws_record->access_count;

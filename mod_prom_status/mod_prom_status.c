@@ -37,6 +37,8 @@
 #include "prom_status_collector.h"
 #include "prom_status_renderer.h"
 
+#define MIN(a, b)  (((a) < (b)) ? (a) : (b))
+
 static void register_hooks(apr_pool_t *pool);
 
 module AP_MODULE_DECLARE_DATA prom_status_module =
@@ -57,7 +59,6 @@ APR_HOOK_STRUCT(
 AP_IMPLEMENT_HOOK_VOID(prom_status_hook, (request_rec *r), (r))
 
 static prom_status_http_mpm_config mpm_config = {
-    .server_limit = 0,
     .thread_limit = 0,
     .threads_per_child = 0,
     .max_servers = 0
@@ -65,13 +66,17 @@ static prom_status_http_mpm_config mpm_config = {
 
 static int prom_status_init(apr_pool_t *p, apr_pool_t *plog, apr_pool_t *ptemp, server_rec *s)
 {
+    int limit_daemons, max_daemons;
+    ap_mpm_query(AP_MPMQ_HARD_LIMIT_DAEMONS, &limit_daemons);
+    ap_mpm_query(AP_MPMQ_MAX_DAEMONS, &max_daemons);
+    mpm_config.max_servers = MIN(max_daemons, limit_daemons);
+
     ap_mpm_query(AP_MPMQ_HARD_LIMIT_THREADS, &mpm_config.thread_limit);
-    ap_mpm_query(AP_MPMQ_HARD_LIMIT_DAEMONS, &mpm_config.server_limit);
-    ap_mpm_query(AP_MPMQ_MAX_DAEMONS, &mpm_config.max_servers);
     ap_mpm_query(AP_MPMQ_MAX_THREADS, &mpm_config.threads_per_child);
     /* work around buggy MPMs */
-    if (mpm_config.threads_per_child == 0)
+    if (mpm_config.threads_per_child == 0) {
         mpm_config.threads_per_child = 1;
+    }
 
     return OK;
 }
@@ -118,9 +123,9 @@ static int prom_status_handler(request_rec *r)
         return DECLINED;
     }
 
-    print_components(r, config, &mpm_config);
+    print_components(r, config);
     print_traffic_metrics(r, metrics);
-    print_scoreboard_data(r, metrics, &mpm_config);
+    print_scoreboard_data(r, metrics, mpm_config.max_servers);
 
     ap_run_prom_status_hook(r);
 
