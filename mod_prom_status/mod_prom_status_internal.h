@@ -42,5 +42,5 @@ typedef struct {
     apr_uint32_t uptime;
     int *worker_status_count;
     int req_count;
-    int byte_count;
+    apr_off_t byte_count;
 } prom_status_httpd_metrics;

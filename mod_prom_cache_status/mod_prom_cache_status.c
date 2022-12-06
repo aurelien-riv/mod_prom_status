@@ -102,5 +102,5 @@ static void register_hooks(apr_pool_t *pool)
     ap_hook_post_config(prom_cache_status_post_config, NULL, NULL, APR_HOOK_LAST);
     ap_hook_child_init(prom_cache_status_child_init, NULL, NULL, APR_HOOK_MIDDLE);
     cache_hook_cache_status(prom_cache_status_listener, NULL, NULL, APR_HOOK_MIDDLE);
-    ap_hook_prom_status_hook(prom_cache_status_handler, NULL, NULL, APR_HOOK_MIDDLE);
+    prom_status_hook_prom_status_hook(prom_cache_status_handler, NULL, NULL, APR_HOOK_MIDDLE);
 }

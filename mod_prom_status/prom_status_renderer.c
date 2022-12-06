@@ -59,7 +59,7 @@ void print_traffic_metrics(request_rec *r, prom_status_httpd_metrics *metrics)
 
     ap_rputs("# HELP httpd_sent_bytes_total Current total kbytes sent\n", r);
     ap_rputs("# TYPE httpd_sent_bytes_total counter\n", r);
-    ap_rprintf(r, "httpd_sent_bytes_total %d\n", metrics->byte_count);
+    ap_rprintf(r, "httpd_sent_bytes_total %ld\n", metrics->byte_count);
 }
 
 void print_scoreboard_data(request_rec *r, prom_status_httpd_metrics *metrics, int max_servers)

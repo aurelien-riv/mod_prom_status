@@ -24,3 +24,17 @@ Clone the repository and run the docker-compose.yml, then browse the dashboards:
 
 ![grafana_mod_prom_status](https://github.com/aurelien-riv/mod_prom_status/blob/main/docker-demo/.screenshots/grafana_mod_prom_status.png?raw=true)
 ![grafana_mod_prom_cache_status](https://github.com/aurelien-riv/mod_prom_status/blob/main/docker-demo/.screenshots/grafana_mod_prom_cache_status.png?raw=true)
+
+## Build
+
+### Linux
+```bash
+apxs -c mod_prom_status/*.c
+apxs -c -I mod_prom_status/ mod_prom_cache_status/*.c
+```
+
+### Windows
+```cmd
+"C:\Program Files\Microsoft Visual Studio\2022\Professional\VC\Tools\MSVC\14.34.31933\bin\Hostx64\x64\cl.exe" -I D:\Apache2448\include /c /MD /W3 /O2 /D WIN32 /D _WINDOWS /D NDEBUG *.c
+"C:\Program Files\Microsoft Visual Studio\2022\Professional\VC\Tools\MSVC\14.34.31933\bin\Hostx64\x64\link.exe" /subsystem:windows /dll /libpath:"D:\Apache2448\lib" libapr-1.lib libhttpd.lib libaprutil-1.lib  *.obj
+```

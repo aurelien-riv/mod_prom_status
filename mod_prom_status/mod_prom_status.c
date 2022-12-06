@@ -56,7 +56,7 @@ module AP_MODULE_DECLARE_DATA prom_status_module =
 APR_HOOK_STRUCT(
   APR_HOOK_LINK(prom_status_hook)
 )
-AP_IMPLEMENT_HOOK_VOID(prom_status_hook, (request_rec *r), (r))
+APR_IMPLEMENT_EXTERNAL_HOOK_VOID(prom_status, PROM_STATUS, prom_status_hook, (request_rec *r), (r))
 
 static prom_status_http_mpm_config mpm_config = {
     .thread_limit = 0,
@@ -127,7 +127,7 @@ static int prom_status_handler(request_rec *r)
     print_traffic_metrics(r, metrics);
     print_scoreboard_data(r, metrics, mpm_config.max_servers);
 
-    ap_run_prom_status_hook(r);
+    prom_status_run_prom_status_hook(r);
 
     return OK;
 }

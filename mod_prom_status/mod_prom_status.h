@@ -25,6 +25,17 @@
 
 #include "httpd.h"
 #include "http_core.h"
+#include "apr_hooks.h"
 #include "ap_config.h"
 
-AP_DECLARE_HOOK(void, prom_status_hook, (request_rec *r))
+#if defined(WIN32)
+#define PROM_STATUS_DECLARE(type)            __declspec(dllexport) type __stdcall
+#define PROM_STATUS_DECLARE_NONSTD(type)     __declspec(dllexport) type
+#define PROM_STATUS_DECLARE_DATA             __declspec(dllexport)
+#else
+#define PROM_STATUS_DECLARE(type)            type
+#define PROM_STATUS_DECLARE_NONSTD(type)     type
+#define PROM_STATUS_DECLARE_DATA
+#endif
+
+APR_DECLARE_EXTERNAL_HOOK(prom_status, PROM_STATUS, void, prom_status_hook, (request_rec *r))
